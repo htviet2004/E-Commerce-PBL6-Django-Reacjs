@@ -15,6 +15,7 @@ import UserList from './pages/UserList';
 import AddProduct from './pages/AddProduct';
 import AddCategory from './pages/AddCategory';
 import Home from './pages/Home';
+import CategoryPage from './pages/CategoryPage.jsx';
 
 function App() {
   return (
@@ -26,6 +27,9 @@ function App() {
             {/* Home làm trang mặc định */}
             <Route index element={<Home />} />
             <Route path="/" element={<Home />} />
+
+            {/* Category page */}
+            <Route path="/category/:slug" element={<CategoryPage />} />
 
             {/* giữ các route khác */}
             <Route path="/login" element={<Login />} />

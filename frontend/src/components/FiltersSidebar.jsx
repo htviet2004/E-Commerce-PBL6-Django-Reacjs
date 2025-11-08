@@ -1,23 +1,32 @@
-import { Link } from 'react-router-dom'
+import React from 'react';
+import { Link } from 'react-router-dom';
+import CategoryChip from './CategoryChip.jsx';
 
 export default function FiltersSidebar({ 
   categories = [], 
   selectedCategory, 
   onCategoryChange,
-  priceRange,
-  onPriceRangeChange,
+  priceRange = { min: '', max: '' },
+  onPriceRangeChange = () => {},
   sortBy,
-  onSortChange,
-  onClearFilters,
+  onSortChange = () => {},
+  onClearFilters = () => {},
   showCategoryLinks = false
 }) {
+  // normalize incoming categories to objects { id, name, slug }
+  const normalized = (categories || []).map((c) => {
+    if (!c) return { id: null, name: 'Tất cả', slug: '' };
+    if (typeof c === 'string') return { id: null, name: c, slug: '' };
+    return { id: c.id ?? null, name: c.name ?? String(c), slug: c.slug ?? '' };
+  });
+
   return (
     <div className="filters-sidebar">
       <div className="filters-header">
         <h3>Bộ lọc</h3>
         <button 
           className="clear-filters-btn"
-          onClick={onClearFilters}
+          onClick={() => onClearFilters && onClearFilters()}
         >
           Xóa bộ lọc
         </button>
@@ -27,16 +36,20 @@ export default function FiltersSidebar({
         <div className="filter-section">
           <h4>Danh mục</h4>
           <div className="filter-options">
-            {categories.map(category => (
-              <Link
-                key={category}
-                to={category === 'Tất cả' ? '/' : `/category/${encodeURIComponent(category)}`}
-                className={`filter-option ${selectedCategory === category ? 'active' : ''}`}
-                onClick={() => onCategoryChange(category)}
-              >
-                {category}
-              </Link>
-            ))}
+            {normalized.map((cat, i) => {
+              const valueToSend = cat.slug || cat.name || String(cat.id ?? i);
+              const to = cat.slug ? (cat.name === 'Tất cả' ? '/' : `/category/${encodeURIComponent(cat.slug)}`) : (cat.name === 'Tất cả' ? '/' : `/category/${encodeURIComponent(cat.name)}`);
+              const active = (selectedCategory && (String(selectedCategory) === String(cat.slug) || String(selectedCategory) === String(cat.name)));
+              return (
+                <CategoryChip
+                  key={cat.slug || cat.name || `${i}`}
+                  label={cat.name}
+                  to={to}
+                  active={active}
+                  onClick={() => onCategoryChange && onCategoryChange(valueToSend)}
+                />
+              );
+            })}
           </div>
         </div>
       )}
@@ -45,18 +58,21 @@ export default function FiltersSidebar({
         <div className="filter-section">
           <h4>Danh mục</h4>
           <div className="filter-options">
-            {categories.map(category => (
-              <label key={category} className="filter-option">
-                <input
-                  type="radio"
-                  name="category"
-                  value={category}
-                  checked={selectedCategory === category}
-                  onChange={(e) => onCategoryChange(e.target.value)}
-                />
-                <span>{category}</span>
-              </label>
-            ))}
+            {normalized.map((cat, i) => {
+              const value = cat.slug || cat.name;
+              return (
+                <label key={value || i} className="filter-option">
+                  <input
+                    type="radio"
+                    name="category"
+                    value={value}
+                    checked={String(selectedCategory || '') === String(value)}
+                    onChange={(e) => onCategoryChange && onCategoryChange(e.target.value)}
+                  />
+                  <span>{cat.name}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
       )}
@@ -67,15 +83,15 @@ export default function FiltersSidebar({
           <input
             type="number"
             placeholder="Từ"
-            value={priceRange.min}
-            onChange={(e) => onPriceRangeChange(prev => ({ ...prev, min: e.target.value }))}
+            value={priceRange.min ?? ''}
+            onChange={(e) => onPriceRangeChange && onPriceRangeChange(prev => ({ ...prev, min: e.target.value }))}
           />
           <span>-</span>
           <input
             type="number"
             placeholder="Đến"
-            value={priceRange.max}
-            onChange={(e) => onPriceRangeChange(prev => ({ ...prev, max: e.target.value }))}
+            value={priceRange.max ?? ''}
+            onChange={(e) => onPriceRangeChange && onPriceRangeChange(prev => ({ ...prev, max: e.target.value }))}
           />
         </div>
       </div>
@@ -84,7 +100,7 @@ export default function FiltersSidebar({
         <h4>Sắp xếp theo</h4>
         <select 
           value={sortBy} 
-          onChange={(e) => onSortChange(e.target.value)}
+          onChange={(e) => onSortChange && onSortChange(e.target.value)}
           className="sort-select"
         >
           <option value="relevance">Liên quan nhất</option>

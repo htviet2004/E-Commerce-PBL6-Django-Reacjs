@@ -24,15 +24,15 @@ export default function Header({
 
   function onSearch(e) {
     e?.preventDefault();
-    const q = localQuery.trim();
+    const q = (localQuery || '').trim();
     if (onQueryChange) onQueryChange(q);
     if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
-    else navigate('/');
+    // nếu rỗng thì không tự động navigate về '/' — giữ người dùng ở trang hiện tại
   }
 
-  // trigger search onChange with debounce
+  // trigger search onChange with debounce (no redirect to '/' when empty)
   useEffect(() => {
-    // skip effect on first render (initial prop -> state)
+    // skip first render
     if (firstRender.current) {
       firstRender.current = false;
       return;
@@ -42,8 +42,11 @@ export default function Header({
     debounceRef.current = setTimeout(() => {
       const q = (localQuery || '').trim();
       if (onQueryChange) onQueryChange(q);
-      if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
-      else navigate('/');
+      // chỉ navigate khi có query
+      if (q) {
+        navigate(`/search?q=${encodeURIComponent(q)}`);
+      }
+      // nếu q rỗng thì không điều hướng, để người dùng ở trang hiện tại (ví dụ category)
     }, 400);
 
     return () => {

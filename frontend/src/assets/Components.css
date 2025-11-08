@@ -267,6 +267,31 @@
   border-color: #007bff;
 }
 
+/* New Styles */
+.filter-btn {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.filters-panel {
+  /* fallback styles if not using inline styles */
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  width: 340px;
+  max-width: 90vw;
+  height: 80vh;
+  overflow-y: auto;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  border-radius: 8px;
+  z-index: 9999;
+  padding: 12px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .page-header h1 {

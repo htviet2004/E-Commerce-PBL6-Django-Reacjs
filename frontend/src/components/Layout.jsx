@@ -14,12 +14,6 @@ export default function Layout({
 
   return (
     <div className={`layout ${className}`}>
-      <Header
-        query={query}
-        onQueryChange={setQuery}
-        onOpenLogin={() => { setAuthMode('login'); setIsAuthOpen(true) }}
-        onOpenRegister={() => { setAuthMode('register'); setIsAuthOpen(true) }}
-      />
       
       <main className="main-content">
         {children}
