@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../utils/AuthContext';
+import { useCart } from '../utils/CartContext';
 import AuthModal from './AuthModal.jsx';
 
 export default function Header({
@@ -13,11 +14,12 @@ export default function Header({
 }) {
   const navigate = useNavigate();
   const auth = useAuth();
+  const { getCartCount } = useCart();
   const currentUser = currentUserProp ?? auth?.user;
   const logoutFn = onLogoutProp ?? auth?.logout ?? (() => {});
   const [localQuery, setLocalQuery] = useState(query || '');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+  const [authMode, setAuthMode] = useState('login');
 
   const firstRender = useRef(true);
   const debounceRef = useRef(null);
@@ -27,12 +29,9 @@ export default function Header({
     const q = (localQuery || '').trim();
     if (onQueryChange) onQueryChange(q);
     if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
-    // nếu rỗng thì không tự động navigate về '/' — giữ người dùng ở trang hiện tại
   }
 
-  // trigger search onChange with debounce (no redirect to '/' when empty)
   useEffect(() => {
-    // skip first render
     if (firstRender.current) {
       firstRender.current = false;
       return;
@@ -42,11 +41,9 @@ export default function Header({
     debounceRef.current = setTimeout(() => {
       const q = (localQuery || '').trim();
       if (onQueryChange) onQueryChange(q);
-      // chỉ navigate khi có query
       if (q) {
         navigate(`/search?q=${encodeURIComponent(q)}`);
       }
-      // nếu q rỗng thì không điều hướng, để người dùng ở trang hiện tại (ví dụ category)
     }, 400);
 
     return () => {
@@ -88,10 +85,7 @@ export default function Header({
             value={localQuery}
             onChange={(e) => {
               setLocalQuery(e.target.value);
-              // onQueryChange handled by debounce effect, but keep immediate callback if provided
               if (!onQueryChange) return;
-              // do not call onQueryChange twice in case effect also calls it;
-              // call immediate for components that expect instant update
               try { onQueryChange(e.target.value); } catch {}
             }}
             className="search-input"
@@ -113,9 +107,7 @@ export default function Header({
               <button
                 type="button"
                 className="logout-btn"
-                onClick={() => {
-                  handleLogout();
-                }}
+                onClick={handleLogout}
               >
                 Đăng xuất
               </button>
@@ -133,7 +125,29 @@ export default function Header({
             </>
           )}
 
-          <Link to="/cart" className="cart-btn" aria-label="Giỏ hàng">🛒</Link>
+          <Link to="/cart" className="cart-btn" aria-label="Giỏ hàng" style={{ position: 'relative' }}>
+            🛒
+            {getCartCount() > 0 && (
+              <span className="cart-dot" style={{
+                position: 'absolute',
+                top: '6px',
+                right: '6px',
+                minWidth: '18px',
+                height: '18px',
+                background: '#22c55e',
+                color: 'white',
+                borderRadius: '50%',
+                fontSize: '10px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid white'
+              }}>
+                {getCartCount()}
+              </span>
+            )}
+          </Link>
         </div>
       </header>
 

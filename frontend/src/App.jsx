@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './utils/AuthContext';
+import { CartProvider } from './utils/CartContext';
 import PrivateRoute from './components/PrivateRoute';
 import Header from './components/Header';
 
@@ -16,102 +17,111 @@ import AddProduct from './pages/AddProduct';
 import AddCategory from './pages/AddCategory';
 import Home from './pages/Home';
 import CategoryPage from './pages/CategoryPage.jsx';
+import ProductDetail from './pages/ProductDetail';
+import Cart from './pages/Cart';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="App">
-          <Header />
-          <Routes>
-            {/* Home làm trang mặc định */}
-            <Route index element={<Home />} />
-            <Route path="/" element={<Home />} />
+        <CartProvider>
+          <div className="App">
+            <Header />
+            <Routes>
+              {/* Home làm trang mặc định */}
+              <Route index element={<Home />} />
+              <Route path="/" element={<Home />} />
 
-            {/* Category page */}
-            <Route path="/category/:slug" element={<CategoryPage />} />
+              {/* Category page */}
+              <Route path="/category/:slug" element={<CategoryPage />} />
 
-            {/* giữ các route khác */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+              {/* Product Detail */}
+              <Route path="/product/:id" element={<ProductDetail />} />
 
-            {/* Buyer */}
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute allowedRoles={['buyer']}>
-                  <Dashboard />
-                </PrivateRoute>
-              }
-            />
+              {/* Cart */}
+              <Route path="/cart" element={<Cart />} />
 
-            {/* Seller */}
-            <Route
-              path="/seller/dashboard"
-              element={
-                <PrivateRoute allowedRoles={['seller']}>
-                  <SellerDashboard />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/seller/products/new"
-              element={
-                <PrivateRoute allowedRoles={['seller']}>
-                  <AddProduct />
-                </PrivateRoute>
-              }
-            />
+              {/* giữ các route khác */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* Admin */}
-            <Route
-              path="/admin/dashboard"
-              element={
-                <PrivateRoute allowedRoles={['admin']}>
-                  <AdminDashboard />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/admin/categories/new"
-              element={
-                <PrivateRoute allowedRoles={['admin']}>
-                  <AddCategory />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/users"
-              element={
-                <PrivateRoute allowedRoles={['admin']}>
-                  <UserList />
-                </PrivateRoute>
-              }
-            />
+              {/* Buyer */}
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute allowedRoles={['buyer']}>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
 
-            {/* Common protected */}
-            <Route
-              path="/profile"
-              element={
-                <PrivateRoute>
-                  <Profile />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/change-password"
-              element={
-                <PrivateRoute>
-                  <ChangePassword />
-                </PrivateRoute>
-              }
-            />
+              {/* Seller */}
+              <Route
+                path="/seller/dashboard"
+                element={
+                  <PrivateRoute allowedRoles={['seller']}>
+                    <SellerDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/seller/products/new"
+                element={
+                  <PrivateRoute allowedRoles={['seller']}>
+                    <AddProduct />
+                  </PrivateRoute>
+                }
+              />
 
-            {/* Default */}
-            <Route path="/" element={<RoleBasedRedirect />} />
-            <Route path="*" element={<RoleBasedRedirect />} />
-          </Routes>
-        </div>
+              {/* Admin */}
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <PrivateRoute allowedRoles={['admin']}>
+                    <AdminDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin/categories/new"
+                element={
+                  <PrivateRoute allowedRoles={['admin']}>
+                    <AddCategory />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/users"
+                element={
+                  <PrivateRoute allowedRoles={['admin']}>
+                    <UserList />
+                  </PrivateRoute>
+                }
+              />
+
+              {/* Common protected */}
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <Profile />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/change-password"
+                element={
+                  <PrivateRoute>
+                    <ChangePassword />
+                  </PrivateRoute>
+                }
+              />
+
+              {/* Default */}
+              <Route path="*" element={<RoleBasedRedirect />} />
+            </Routes>
+          </div>
+        </CartProvider>
       </AuthProvider>
     </Router>
   );
