@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Category, Product
+from reviews.models import Review
+from django.db.models import Avg, Count
 
 class CategorySerializer(serializers.ModelSerializer):
     product_count = serializers.IntegerField(read_only=True)
@@ -12,6 +14,8 @@ class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     seller_name = serializers.SerializerMethodField()
+    rating_avg = serializers.SerializerMethodField()
+    rating_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -26,6 +30,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "seller_name",
             "stock",
             "created_at",
+            "rating_avg",
+            "rating_count",
         ]
 
     def get_image(self, obj):
@@ -45,6 +51,14 @@ class ProductSerializer(serializers.ModelSerializer):
         if obj.seller_id:
             return getattr(obj.seller, "full_name", None) or obj.seller.username
         return None
+
+    def get_rating_avg(self, obj):
+        agg = Review.objects.filter(product=obj).aggregate(a=Avg('rating'))
+        return round(agg['a'] or 0, 2)
+
+    def get_rating_count(self, obj):
+        agg = Review.objects.filter(product=obj).aggregate(c=Count('id'))
+        return agg['c'] or 0
 
 class ProductCreateSerializer(serializers.ModelSerializer):
     # dùng khi cần create/update; category nhận id

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../utils/CartContext';
 import '../assets/ProductCard.css';  // ⬅️ Thêm import này
+import StarRating from './StarRating';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
@@ -78,6 +79,25 @@ export default function ProductCard({ product }) {
         <div className="product-body">
           <h3 className="product-name">{product.name}</h3>
           {categoryName && <div className="product-category">{categoryName}</div>}
+          {/* Rating summary */}
+          {(() => {
+            const avg =
+              product.rating_avg ??
+              product.average_rating ??
+              product.rating ?? null;
+            const cnt =
+              product.rating_count ??
+              product.reviews_count ??
+              product.reviews?.length ??
+              null;
+
+            const hasAny = typeof cnt === 'number' ? cnt > 0 : avg !== null;
+            return hasAny ? (
+              <div className="product-rating" style={{ margin: '6px 0' }}>
+                <StarRating value={Number(avg || 0)} count={typeof cnt === 'number' ? cnt : undefined} readOnly showValue size={14} />
+              </div>
+            ) : null;
+          })()}
           <div className="product-price">
             {product.price ? `${Number(product.price).toLocaleString('vi-VN')}₫` : 'Liên hệ'}
           </div>

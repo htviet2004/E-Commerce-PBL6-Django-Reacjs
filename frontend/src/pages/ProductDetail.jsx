@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../utils/CartContext';
 import { formatPrice } from '../utils/formatPrice';
 import '../assets/productDetail.css';
+import StarRating from '../components/StarRating';
+import { getProductReviews, getReviewEligibility, submitReview } from '../utils/reviewsApi';
 
 export default function ProductDetail() {
     const { id } = useParams();
@@ -15,6 +17,15 @@ export default function ProductDetail() {
     const [color, setColor] = useState('');
     const [size, setSize] = useState('');
     const [qty, setQty] = useState(1);
+    const [reviews, setReviews] = useState([]);
+    const [avgRating, setAvgRating] = useState(0);
+    const [ratingCount, setRatingCount] = useState(0);
+    const [canReview, setCanReview] = useState(false);
+    const [myReview, setMyReview] = useState(null);
+    const [reviewRating, setReviewRating] = useState(0);
+    const [reviewComment, setReviewComment] = useState('');
+    const [reviewsLoading, setReviewsLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         fetch(`http://localhost:8000/api/products/${id}/`)
@@ -32,6 +43,72 @@ export default function ProductDetail() {
                 setLoading(false);
             });
     }, [id]);
+
+    useEffect(() => {
+        let cancelled = false;
+        async function loadReviews() {
+            try {
+                setReviewsLoading(true);
+                const [r1, r2] = await Promise.all([
+                    getProductReviews(id),
+                    getReviewEligibility(id).catch(() => ({ can_review: false }))
+                ]);
+                if (cancelled) return;
+                setReviews(r1.reviews || []);
+                setAvgRating(Number(r1.average || 0));
+                setRatingCount(Number(r1.count || 0));
+                setCanReview(Boolean(r2.can_review));
+                if (r2.my_review) {
+                    setMyReview(r2.my_review);
+                    setReviewRating(r2.my_review.rating || 0);
+                    setReviewComment(r2.my_review.comment || '');
+                } else {
+                    setMyReview(null);
+                    setReviewRating(0);
+                    setReviewComment('');
+                }
+                if (r2.reason === 'unauthenticated') {
+                    console.debug('Not logged in -> cannot review');
+                }
+            } finally {
+                if (!cancelled) setReviewsLoading(false);
+            }
+        }
+        loadReviews();
+        return () => { cancelled = true; };
+    }, [id]);
+
+    async function handleSubmitReview(e) {
+        e.preventDefault();
+        if (!reviewRating) {
+            alert('Vui lòng chọn số sao');
+            return;
+        }
+        try {
+            setSubmitting(true);
+            const saved = await submitReview(id, { rating: reviewRating, comment: reviewComment });
+            // Cập nhật trạng thái của chính review
+            setMyReview(saved);
+            setCanReview(false);
+            // Refresh danh sách + trung bình
+            const r = await getProductReviews(id);
+            setReviews(r.reviews || []);
+            setAvgRating(Number(r.average || 0));
+            setRatingCount(Number(r.count || 0));
+        } catch (err) {
+            console.error(err);
+            if (String(err).includes('401') || String(err.message || '').toLowerCase().includes('auth')) {
+                if (window.confirm('Bạn cần đăng nhập để đánh giá. Đi đến trang đăng nhập?')) {
+                    // điều hướng sang login nếu app bạn có route này
+                    window.location.href = '/login';
+                }
+            } else {
+                alert('Gửi đánh giá thất bại. Vui lòng thử lại.');
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    }
 
     if (loading) {
         return (
@@ -140,6 +217,11 @@ export default function ProductDetail() {
                     <h1>{product.name}</h1>
                     <div className="product-detail-price">
                         {formatPrice(product.price)}
+                    </div>
+
+                    {/* Rating summary line */}
+                    <div style={{ margin: '8px 0 12px 0' }}>
+                        <StarRating value={avgRating} count={ratingCount} readOnly showValue size={16} />
                     </div>
 
                     <div className="pd-card">
@@ -282,6 +364,72 @@ export default function ProductDetail() {
                     <div className="pd-description">
                         <pre>{description}</pre>
                     </div>
+                </section>
+
+                {/* Reviews */}
+                <section className="detail-section">
+                    <h3>Đánh giá sản phẩm</h3>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
+                        <StarRating value={avgRating} count={ratingCount} readOnly showValue size={20} />
+                        {reviewsLoading ? <span>Đang tải đánh giá...</span> : null}
+                    </div>
+
+                    {(canReview || myReview) && (
+                        <form onSubmit={handleSubmitReview} className="pd-card" style={{ marginBottom: 16 }}>
+                            <div style={{ marginBottom: 10 }}>
+                                <div style={{ marginBottom: 6 }}>{myReview ? 'Cập nhật đánh giá của bạn' : 'Đánh giá của bạn'}</div>
+                                <StarRating
+                                    value={reviewRating}
+                                    readOnly={false}
+                                    onChange={setReviewRating}
+                                    size={24}
+                                />
+                            </div>
+                            <div style={{ marginBottom: 10 }}>
+                                <textarea
+                                    placeholder="Chia sẻ cảm nhận về sản phẩm..."
+                                    value={reviewComment}
+                                    onChange={(e) => setReviewComment(e.target.value)}
+                                    rows={4}
+                                    style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #e5e7eb' }}
+                                />
+                            </div>
+                            <button className="add-cart" disabled={submitting}>
+                                {submitting ? 'Đang gửi...' : (myReview ? 'Cập nhật đánh giá' : 'Gửi đánh giá')}
+                            </button>
+                        </form>
+                    )}
+
+                    {!canReview && !reviewsLoading && !myReview && (
+                        <div className="pd-card" style={{ color: 'var(--text-muted)' }}>
+                            Chỉ người đã mua sản phẩm mới có thể đánh giá. <a href="/login" style={{ color: 'var(--accent)' }}>Đăng nhập</a>
+                        </div>
+                    )}
+
+                    {/* Reviews list */}
+                    {reviews.length > 0 ? (
+                        <div className="pd-card" style={{ display: 'grid', gap: 12 }}>
+                            {reviews.map((rv) => (
+                                <div key={rv.id || `${rv.user_id}-${rv.created_at}`} style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: 10 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <strong style={{ fontSize: 14 }}>{rv.user_name || 'Người dùng'}</strong>
+                                        <StarRating value={rv.rating} readOnly size={14} />
+                                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                                            {rv.created_at ? new Date(rv.created_at).toLocaleDateString('vi-VN') : ''}
+                                        </span>
+                                    </div>
+                                    {rv.comment ? (
+                                        <div style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{rv.comment}</div>
+                                    ) : null}
+                                </div>
+                            ))}
+                        </div>
+                    ) : !reviewsLoading ? (
+                        <div className="pd-card" style={{ color: 'var(--text-muted)' }}>
+                            Chưa có đánh giá nào.
+                        </div>
+                    ) : null}
                 </section>
             </div>
         </div>

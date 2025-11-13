@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'users',
     'orders',
     'chat',
+    'reviews',
 ]
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
