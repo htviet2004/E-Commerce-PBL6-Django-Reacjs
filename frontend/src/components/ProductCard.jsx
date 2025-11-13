@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../utils/CartContext';
 import '../assets/ProductCard.css';  // ⬅️ Thêm import này
-import StarRating from './StarRating';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
@@ -79,7 +78,7 @@ export default function ProductCard({ product }) {
         <div className="product-body">
           <h3 className="product-name">{product.name}</h3>
           {categoryName && <div className="product-category">{categoryName}</div>}
-          {/* Rating summary */}
+
           {(() => {
             const avg =
               product.rating_avg ??
@@ -90,17 +89,43 @@ export default function ProductCard({ product }) {
               product.reviews_count ??
               product.reviews?.length ??
               null;
-
             const hasAny = typeof cnt === 'number' ? cnt > 0 : avg !== null;
-            return hasAny ? (
-              <div className="product-rating" style={{ margin: '6px 0' }}>
-                <StarRating value={Number(avg || 0)} count={typeof cnt === 'number' ? cnt : undefined} readOnly showValue size={14} />
+
+            return (
+              <div
+                className="product-meta-row"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}
+              >
+                <div className="product-price">
+                  {product.price ? `${Number(product.price).toLocaleString('vi-VN')}₫` : 'Liên hệ'}
+                </div>
+
+                {hasAny ? (
+                  <div
+                    className="product-avg"
+                    title={`${Number(avg || 0).toFixed(1)} sao`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#f59e0b' }}
+                  >
+                    <span style={{ fontSize: 13, lineHeight: 1, color: 'inherit' }}>
+                      {Number(avg || 0).toFixed(1)}
+                    </span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="#f59e0b"
+                      stroke="#f59e0b"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                      style={{ display: 'block' }}
+                    >
+                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                    </svg>
+                  </div>
+                ) : <span /> }
               </div>
-            ) : null;
+            );
           })()}
-          <div className="product-price">
-            {product.price ? `${Number(product.price).toLocaleString('vi-VN')}₫` : 'Liên hệ'}
-          </div>
         </div>
       </Link>
     </article>
